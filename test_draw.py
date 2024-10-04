@@ -30,6 +30,8 @@ def draw_keypoints_and_skeleton(frame, keypoints):
     for i, sk in enumerate(SKELETON):
         r, g, b = POSE_LIMB_COLOR[i] if i < len(POSE_LIMB_COLOR) else (255, 255, 255)
         pt1 = keypoints[sk[0] - 1]
+        pt1x, pt1y, pt1_conf = [int(pt1[0]), int(pt1[1]), pt1[2]]
         pt2 = keypoints[sk[1] - 1]
-        if pt1[2] > 0.5 and pt2[2] > 0.5:  # Only draw lines if both keypoints have high confidence
-            cv2.line(frame, (int(pt1[0]), int(pt1[1])), (int(pt2[0]), int(pt2[1])), (int(r), int(g), int(b)), 2)
+        pt2x, pt2y, pt2_conf = [int(pt2[0]), int(pt2[1]), pt2[2]]
+        if pt1_conf > 0.5 and pt2_conf > 0.5:  # Only draw lines if both keypoints have high confidence
+            cv2.line(frame, (pt1x, pt1y), (pt2x, pt2y), (int(r), int(g), int(b)), 2)

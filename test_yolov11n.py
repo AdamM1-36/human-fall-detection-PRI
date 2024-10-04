@@ -1,8 +1,6 @@
 from ultralytics import YOLO
-import torch
 import cv2
 import math
-import numpy as np
 from test_draw import draw_keypoints_and_skeleton
 
 
@@ -96,10 +94,10 @@ while cap.isOpened():
     cv2.imshow("Pose Estimation", frame)
 
     # Exit if 'q' is pressed
-    # Pause every 5 frames to check quality
+    # Pause every 4 frames to check quality
     frame_counter += 1
-    if frame_counter % 5 == 0:
-        if cv2.waitKey(100) & 0xFF == ord('q'):  # delay 100ms
+    if frame_counter % 4 == 0:
+        if cv2.waitKey(200) & 0xFF == ord('q'):  # delay 200ms
             break
     else:
         if cv2.waitKey(1) & 0xFF == ord('q'):

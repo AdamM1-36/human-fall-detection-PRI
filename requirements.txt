@@ -13,6 +13,9 @@ torchvision>=0.8.1,!=0.13.0
 tqdm>=4.41.0
 protobuf<4.21.3
 
+# Using yolov11 model
+ultralytics
+
 # Logging -------------------------------------
 tensorboard>=2.4.1
 # wandb

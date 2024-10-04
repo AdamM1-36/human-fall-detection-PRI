@@ -447,7 +447,7 @@ def output_to_keypoint(output):
 
 
 def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
-    # Plot the skeleton and keypointsfor coco datatset
+    # Plot the skeleton and keypoints for coco dataset
     palette = np.array([[255, 128, 0], [255, 153, 51], [255, 178, 102],
                         [230, 230, 0], [255, 153, 255], [153, 204, 255],
                         [255, 102, 255], [255, 51, 255], [102, 178, 255],
@@ -466,7 +466,7 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
     num_kpts = len(kpts) // steps
 
     for kid in range(num_kpts):
-        r, g, b = pose_kpt_color[kid]
+        r, g, b = pose_kpt_color[kid] if kid < len(pose_kpt_color) else (255, 255, 255)
         x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
         if not (x_coord % 640 == 0 or y_coord % 640 == 0):
             if steps == 3:
@@ -474,9 +474,10 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
                 if conf < 0.5:
                     continue
             cv2.circle(im, (int(x_coord), int(y_coord)), radius, (int(r), int(g), int(b)), -1)
+            cv2.putText(im, str(kid), (int(x_coord), int(y_coord)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     for sk_id, sk in enumerate(skeleton):
-        r, g, b = pose_limb_color[sk_id]
+        r, g, b = pose_limb_color[sk_id] if sk_id < len(pose_limb_color) else (255, 255, 255)
         pos1 = (int(kpts[(sk[0] - 1) * steps]), int(kpts[(sk[0] - 1) * steps + 1]))
         pos2 = (int(kpts[(sk[1] - 1) * steps]), int(kpts[(sk[1] - 1) * steps + 1]))
         if steps == 3:

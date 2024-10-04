@@ -12,6 +12,9 @@ from utils.datasets import letterbox
 from utils.general import non_max_suppression_kpt
 from utils.plots import output_to_keypoint, plot_skeleton_kpts
 
+SELECT = 0
+weights = ['yolov7-w6-pose.pt', 'yolo11n-pose.pt']
+WEIGHT = weights[SELECT]
 
 def fall_detection(poses):
     for pose in poses:
@@ -48,7 +51,7 @@ def falling_alarm(image, bbox):
 def get_pose_model():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("device: ", device)
-    weigths = torch.load('yolov7-w6-pose.pt', map_location=device)
+    weigths = torch.load(WEIGHT, map_location=device)
     model = weigths['model']
     _ = model.float().eval()
     if torch.cuda.is_available():
@@ -64,8 +67,11 @@ def get_pose(image, model, device):
         image = image.half().to(device)
     with torch.no_grad():
         output, _ = model(image)
-    output = non_max_suppression_kpt(output, 0.25, 0.65, nc=model.yaml['nc'], nkpt=model.yaml['nkpt'],
-                                     kpt_label=True)
+    output = non_max_suppression_kpt(
+        output, 0.25, 0.65, nc=model.yaml['nc'], 
+        nkpt = model.yaml['nkpt'] if 'nkpt' in model.yaml else model.yaml['kpt_shape'][0],
+        kpt_label=True
+    )
     with torch.no_grad():
         output = output_to_keypoint(output)
     return image, output
@@ -85,8 +91,11 @@ def prepare_vid_out(video_path, vid_cap):
     out = cv2.VideoWriter(out_video_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, (resize_width, resize_height))
     return out
 
+def print_keypoints(output):
+    for pose in output:
+        print(pose)
 
-def process_video(video_path):
+def process_video(video_path, real_time=True):
     vid_cap = cv2.VideoCapture(video_path)
 
     if not vid_cap.isOpened():
@@ -94,24 +103,44 @@ def process_video(video_path):
         return
 
     model, device = get_pose_model()
-    vid_out = prepare_vid_out(video_path, vid_cap)
 
-    success, frame = vid_cap.read()
-    _frames = []
-    while success:
-        _frames.append(frame)
+    if not real_time:
+        vid_out = prepare_vid_out(video_path, vid_cap)
         success, frame = vid_cap.read()
+        _frames = []
+        while success:
+            _frames.append(frame)
+            success, frame = vid_cap.read()
 
-    for image in tqdm(_frames):
-        image, output = get_pose(image, model, device)
-        _image = prepare_image(image)
-        is_fall, bbox = fall_detection(output)
-        if is_fall:
-            falling_alarm(_image, bbox)
-        vid_out.write(_image)
+        for image in tqdm(_frames):
+            image, output = get_pose(image, model, device)
+            _image = prepare_image(image)
+            is_fall, bbox = fall_detection(output)
+            if is_fall:
+                falling_alarm(_image, bbox)
+            vid_out.write(_image)
 
-    vid_out.release()
+        vid_out.release()
+    else:
+        while vid_cap.isOpened():
+            ret, frame = vid_cap.read()
+            if not ret:
+                break
+
+            image, output = get_pose(frame, model, device)
+            # print_keypoints(output)
+
+            _image = prepare_image(image)
+            is_fall, bbox = fall_detection(output)
+            if is_fall:
+                falling_alarm(_image, bbox)
+
+            cv2.imshow('Real-time Pose Detection', _image)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
     vid_cap.release()
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
